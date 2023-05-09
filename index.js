@@ -122,6 +122,38 @@ const setup = async () => {
     //update pagination buttons
     updatePaginationDiv(currentPage, numPages);
   });
+
+  $("body").on("click", ".firstButton", async function (e) {
+    currentPage = 1;
+    paginate(currentPage, PAGE_SIZE, pokemons);
+
+    //update pagination buttons
+    updatePaginationDiv(currentPage, numPages);
+  });
+
+  $("body").on("click", ".prevButton", async function (e) {
+    currentPage -= 1;
+    paginate(currentPage, PAGE_SIZE, pokemons);
+
+    //update pagination buttons
+    updatePaginationDiv(currentPage, numPages);
+  });
+
+  $("body").on("click", ".lastButton", async function (e) {
+    currentPage = numPages;
+    paginate(currentPage, PAGE_SIZE, pokemons);
+
+    //update pagination buttons
+    updatePaginationDiv(currentPage, numPages);
+  });
+
+  $("body").on("click", ".nextButton", async function (e) {
+    currentPage += 1;
+    paginate(currentPage, PAGE_SIZE, pokemons);
+
+    //update pagination buttons
+    updatePaginationDiv(currentPage, numPages);
+  });
 };
 
 $(document).ready(setup);
