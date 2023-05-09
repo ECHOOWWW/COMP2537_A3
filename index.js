@@ -54,6 +54,31 @@ const paginate = async (currentPage, PAGE_SIZE, pokemons) => {
   }
 };
 
+const filterDiv = async () => {
+  $("#filter").empty;
+  let response = await axios.get("https://pokeapi.co/api/v2/type");
+  types = response.data.results;
+  console.log(types);
+  for (let i = 0; i < types.length; i++) {
+    const type = types[i];
+    $("#filter").append(`
+    <div>
+    <input type="checkbox" id=${type.name} name=${type.name} value=${type.name} class = "checkbox">
+    <label for=${type.name} class = "label"> ${type.name} </label></div>
+    `);
+  }
+};
+
+const numberDiv = (current, sum) => {
+  $("#number").empty;
+
+  $("#number").append(`
+    <h2>
+    Showing ${current} of ${sum} pokemons
+    </h2>
+    `);
+};
+
 const setup = async () => {
   // test out poke api using axios here
 
@@ -66,6 +91,8 @@ const setup = async () => {
   paginate(currentPage, PAGE_SIZE, pokemons);
   const numPages = Math.ceil(pokemons.length / PAGE_SIZE);
   updatePaginationDiv(currentPage, numPages);
+  filterDiv();
+  numberDiv(PAGE_SIZE, pokemons.length);
 
   // pop up modal when clicking on a pokemon card
   // add event listener to each pokemon card
