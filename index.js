@@ -55,22 +55,21 @@ const paginate = async (currentPage, PAGE_SIZE, pokemons) => {
 };
 
 const filterDiv = async () => {
-  $("#filter").empty;
+  $("#filter").empty();
   let response = await axios.get("https://pokeapi.co/api/v2/type");
   types = response.data.results;
-  console.log(types);
   for (let i = 0; i < types.length; i++) {
     const type = types[i];
     $("#filter").append(`
-    <div>
-    <input type="checkbox" id=${type.name} name=${type.name} value=${type.name} class = "checkbox">
+    <div class = "filterContainer">
+    <input type="checkbox" id=${i} name=${type.name} value=${i} class = "checkbox">
     <label for=${type.name} class = "label"> ${type.name} </label></div>
     `);
   }
 };
 
 const numberDiv = (current, sum) => {
-  $("#number").empty;
+  $("#number").empty();
 
   $("#number").append(`
     <h2>
@@ -81,7 +80,6 @@ const numberDiv = (current, sum) => {
 
 const setup = async () => {
   // test out poke api using axios here
-
   $("#pokeCards").empty();
   let response = await axios.get(
     "https://pokeapi.co/api/v2/pokemon?offset=0&limit=810"
@@ -185,3 +183,24 @@ const setup = async () => {
 };
 
 $(document).ready(setup);
+
+const filter = async (typeID) => {
+  let response = await axios.get(
+    `https://pokeapi.co/api/v2/type/${parseInt(typeID) + 1}/`
+  );
+  pokemons = response.data.pokemon;
+  paginate(currentPage, PAGE_SIZE, pokemons);
+  const numPages = Math.ceil(pokemons.length / PAGE_SIZE);
+  updatePaginationDiv(currentPage, numPages);
+  filterDiv();
+  numberDiv(PAGE_SIZE, pokemons.length);
+};
+
+$(document).ready(function () {
+  $("body").on("click", ".checkbox", async function (e) {
+    if ($(this).is(":checked")) {
+      const typeID = e.target.value;
+      filter(typeID);
+    }
+  });
+});
