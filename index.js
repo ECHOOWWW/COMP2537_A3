@@ -37,9 +37,10 @@ const paginate = async (currentPage, PAGE_SIZE, pokemons) => {
     (currentPage - 1) * PAGE_SIZE,
     currentPage * PAGE_SIZE
   );
-
+  pokemons.sort((a, b) => a.id - b.id);
   $("#pokeCards").empty();
-  selected_pokemons.forEach(async (pokemon) => {
+  for (let i = 0; i < selected_pokemons.length; i++) {
+    const pokemon = selected_pokemons[i];
     const res = await axios.get(pokemon.url);
     $("#pokeCards").append(`
       <div class="pokeCard card" pokeName=${res.data.name}   >
@@ -48,9 +49,9 @@ const paginate = async (currentPage, PAGE_SIZE, pokemons) => {
         <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#pokeModal">
           More
         </button>
-        </div>  
-        `);
-  });
+      </div>  
+    `);
+  }
 };
 
 const setup = async () => {
