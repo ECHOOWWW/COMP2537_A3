@@ -69,19 +69,45 @@ const filterDiv = async () => {
   }
 };
 
-const numberDiv = (currentPage, PAGE_SIZE, sum) => {
+const numberDiv = (v, totalPokemonCount) => {
   $("#number").empty();
-  var current = 10;
-  if (currentPage < Math.ceil(sum / PAGE_SIZE)) {
-    current = 10;
-  } else {
-    current = sum - (currentPage - 1) * PAGE_SIZE;
-  }
+  const startIndex = (currentPage - 1) * PAGE_SIZE;
+  const endIndex = Math.min(currentPage * PAGE_SIZE, totalPokemonCount);
+  const currentPagePokemonCount = endIndex - startIndex;
   $("#number").append(`
     <h2>
-    Showing ${current} of ${sum} pokemons
+      Showing ${currentPagePokemonCount} of ${totalPokemonCount} pokemons
     </h2>
-    `);
+  `);
+};
+
+const filter = async ({ typeNames }) => {
+  let response = await axios.get(
+    "https://pokeapi.co/api/v2/pokemon?offset=0&limit=810"
+  );
+  pokemons = response.data.results;
+  const filteredPokemons = [];
+
+  for (let i = 0; i < pokemons.length; i++) {
+    const pokemon = pokemons[i];
+    let res = await axios.get(
+      `https://pokeapi.co/api/v2/pokemon/${pokemon.name}`
+    );
+    let matchesFilter = false;
+    let typeNamesArray = res.data.types.map((type) => type.type.name);
+    if (typeNames.every((typeName) => typeNamesArray.includes(typeName))) {
+      matchesFilter = true;
+    }
+    if (matchesFilter) {
+      filteredPokemons.push(pokemon);
+    }
+  }
+  filtered_pokemons = filteredPokemons;
+
+  paginate(1, PAGE_SIZE, filteredPokemons);
+  const numPages = Math.ceil(filteredPokemons.length / PAGE_SIZE);
+  updatePaginationDiv(1, numPages);
+  numberDiv(currentPage, filteredPokemons.length);
 };
 
 const setup = async () => {
@@ -96,7 +122,17 @@ const setup = async () => {
   const numPages = Math.ceil(pokemons.length / PAGE_SIZE);
   updatePaginationDiv(currentPage, numPages);
   filterDiv();
-  numberDiv(currentPage, PAGE_SIZE, pokemons.length);
+  numberDiv(currentPage, pokemons.length);
+
+  let typeNames = [];
+
+  $("body").on("change", ".checkbox", function (e) {
+    typeNames = [];
+    $(".checkbox:checked").each(function () {
+      typeNames.push($(this).val());
+    });
+    filter({ typeNames });
+  });
 
   // pop up modal when clicking on a pokemon card
   // add event listener to each pokemon card
@@ -145,84 +181,96 @@ const setup = async () => {
         <h5>${res.data.id}</h5>
         `);
   });
-  $("body").on("click", ".numberedButtons", async function (e) {
-    currentPage = Number(e.target.value);
-    //update pagination buttons
-    updatePaginationDiv(currentPage, numPages);
-    paginate(currentPage, PAGE_SIZE, pokemons);
+
+  $(document).on("click", ".firstButton", () => {
+    currentPage = 1;
+    paginate(
+      currentPage,
+      PAGE_SIZE,
+      filtered_pokemons.length ? filtered_pokemons : pokemons
+    );
+    updatePaginationDiv(
+      currentPage,
+      Math.ceil(
+        filtered_pokemons.length
+          ? filtered_pokemons.length / PAGE_SIZE
+          : pokemons.length / PAGE_SIZE
+      )
+    );
   });
 
-  $("body").on("click", ".firstButton", async function (e) {
-    currentPage = Number(e.target.value);
-    //update pagination buttons
-    updatePaginationDiv(currentPage, numPages);
-    paginate(currentPage, PAGE_SIZE, pokemons);
+  $(document).on("click", ".prevButton", () => {
+    currentPage--;
+    paginate(
+      currentPage,
+      PAGE_SIZE,
+      filtered_pokemons.length ? filtered_pokemons : pokemons
+    );
+    updatePaginationDiv(
+      currentPage,
+      Math.ceil(
+        filtered_pokemons.length
+          ? filtered_pokemons.length / PAGE_SIZE
+          : pokemons.length / PAGE_SIZE
+      )
+    );
   });
 
-  $("body").on("click", ".prevButton", async function (e) {
-    currentPage -= 1;
-    //update pagination buttons
-    updatePaginationDiv(currentPage, numPages);
-    paginate(currentPage, PAGE_SIZE, pokemons);
+  $(document).on("click", ".nextButton", () => {
+    currentPage++;
+    paginate(
+      currentPage,
+      PAGE_SIZE,
+      filtered_pokemons.length ? filtered_pokemons : pokemons
+    );
+    updatePaginationDiv(
+      currentPage,
+      Math.ceil(
+        filtered_pokemons.length
+          ? filtered_pokemons.length / PAGE_SIZE
+          : pokemons.length / PAGE_SIZE
+      )
+    );
   });
 
-  $("body").on("click", ".nextButton", async function (e) {
-    currentPage += 1;
-    //update pagination buttons
-    updatePaginationDiv(currentPage, numPages);
-    paginate(currentPage, PAGE_SIZE, pokemons);
+  $(document).on("click", ".lastButton", () => {
+    console.log(filtered_pokemons);
+    currentPage = Math.ceil(
+      filtered_pokemons.length
+        ? filtered_pokemons.length / PAGE_SIZE
+        : pokemons.length / PAGE_SIZE
+    );
+    paginate(
+      currentPage,
+      PAGE_SIZE,
+      filtered_pokemons.length ? filtered_pokemons : pokemons
+    );
+    updatePaginationDiv(
+      currentPage,
+      Math.ceil(
+        filtered_pokemons.length
+          ? filtered_pokemons.length / PAGE_SIZE
+          : pokemons.length / PAGE_SIZE
+      )
+    );
   });
 
-  $("body").on("click", ".lastButton", async function (e) {
-    currentPage = Math.ceil(pokemons.length / PAGE_SIZE);
-    paginate(currentPage, PAGE_SIZE, pokemons);
-    updatePaginationDiv(currentPage, Math.ceil(pokemons.length / PAGE_SIZE));
+  $(document).on("click", ".numberedButtons", (e) => {
+    currentPage = parseInt(e.target.value);
+    paginate(
+      currentPage,
+      PAGE_SIZE,
+      filtered_pokemons.length ? filtered_pokemons : pokemons
+    );
+    updatePaginationDiv(
+      currentPage,
+      Math.ceil(
+        filtered_pokemons.length
+          ? filtered_pokemons.length / PAGE_SIZE
+          : pokemons.length / PAGE_SIZE
+      )
+    );
   });
 };
 
 $(document).ready(setup);
-
-let response = axios.get(
-  "https://pokeapi.co/api/v2/pokemon?offset=0&limit=810"
-);
-pokemons = response.data;
-
-const filter = async ({ typeNames }) => {
-  const filteredPokemons = [];
-
-  for (let i = 0; i < pokemons.length; i++) {
-    const pokemon = pokemons[i];
-    let res = await axios.get(
-      `https://pokeapi.co/api/v2/pokemon/${pokemon.name}`
-    );
-    let matchesFilter = false;
-    let typeNamesArray = res.data.types.map((type) => type.type.name);
-    if (typeNames.every((typeName) => typeNamesArray.includes(typeName))) {
-      matchesFilter = true;
-    }
-
-    if (matchesFilter) {
-      filteredPokemons.push(pokemon);
-    }
-  }
-
-  paginate(1, PAGE_SIZE, filteredPokemons);
-  const numPages = Math.ceil(filteredPokemons.length / PAGE_SIZE);
-  updatePaginationDiv(1, numPages);
-  numberDiv(PAGE_SIZE, 1, filteredPokemons.length);
-};
-
-$(document).ready(function () {
-  let typeNames = [];
-
-  $("body").on("change", ".checkbox", function (e) {
-    typeNames = [];
-    $(".checkbox:checked").each(function () {
-      typeNames.push($(this).val());
-    });
-
-    filter({ typeNames });
-  });
-
-  filter({ typeNames });
-});
