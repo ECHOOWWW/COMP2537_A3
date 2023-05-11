@@ -188,41 +188,41 @@ let response = axios.get(
 pokemons = response.data;
 
 const filter = async ({ typeNames }) => {
-  typeNames.forEach(async (typeName) => {
-    for (let i = pokemons.length - 1; i >= 0; i--) {
-      const pokemon = pokemons[i];
-      let res = await axios.get(
-        `https://pokeapi.co/api/v2/pokemon/${pokemon.name}`
-      );
-      let matchesFilter = false;
-      res.data.types.forEach((type) => {
-        if (type.type.name === typeName) {
-          matchesFilter = true;
-        }
-      });
-      if (!matchesFilter) {
-        // Remove the current pokemon from the `pokemons` array
-        pokemons.splice(i, 1);
-      }
-    }
-  });
+  const filteredPokemons = [];
 
-  paginate(currentPage, PAGE_SIZE, pokemons);
-  const numPages = Math.ceil(pokemons.length / PAGE_SIZE);
-  updatePaginationDiv(currentPage, numPages);
-  numberDiv(PAGE_SIZE, currentPage, pokemons.length);
+  for (let i = 0; i < pokemons.length; i++) {
+    const pokemon = pokemons[i];
+    let res = await axios.get(
+      `https://pokeapi.co/api/v2/pokemon/${pokemon.name}`
+    );
+    let matchesFilter = false;
+    let typeNamesArray = res.data.types.map((type) => type.type.name);
+    if (typeNames.every((typeName) => typeNamesArray.includes(typeName))) {
+      matchesFilter = true;
+    }
+
+    if (matchesFilter) {
+      filteredPokemons.push(pokemon);
+    }
+  }
+
+  paginate(1, PAGE_SIZE, filteredPokemons);
+  const numPages = Math.ceil(filteredPokemons.length / PAGE_SIZE);
+  updatePaginationDiv(1, numPages);
+  numberDiv(PAGE_SIZE, 1, filteredPokemons.length);
 };
 
 $(document).ready(function () {
-  const typeNames = [];
+  let typeNames = [];
 
   $("body").on("change", ".checkbox", function (e) {
-    typeNames.length = 0; // clear the array
-
+    typeNames = [];
     $(".checkbox:checked").each(function () {
       typeNames.push($(this).val());
     });
 
     filter({ typeNames });
   });
+
+  filter({ typeNames });
 });
